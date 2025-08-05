@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import Swal from 'sweetalert2';
 import Logo from '../../Hook/Logo';
+import { Authcontext } from '../Authicantion/Auth/Authcontext';
 
 // Variants for navigation links (staggered animation)
 const navLinkVariants = {
@@ -32,6 +34,7 @@ const hamburgerVariants = {
 };
 
 const Navbar = () => {
+  const { user, logout } = useContext(Authcontext);
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
@@ -39,10 +42,36 @@ const Navbar = () => {
     { name: 'Biodatas', path: '/biodatas' },
     { name: 'About Us', path: '/about' },
     { name: 'Contact Us', path: '/contact' },
+    ...(user ? [{ name: 'Dashboard', path: '/dashboard' }] : []),
   ];
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will be logged out of your account.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#D81B60',
+      cancelButtonColor: '#212121',
+      confirmButtonText: 'Yes, log out!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        setIsOpen(false); // Close mobile menu on logout
+        Swal.fire({
+          title: 'Logged Out!',
+          text: 'You have successfully logged out.',
+          icon: 'success',
+          confirmButtonColor: '#D81B60',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
   };
 
   return (
@@ -95,33 +124,49 @@ const Navbar = () => {
 
               <div className="flex items-center gap-4">
                 <div className="sm:flex sm:gap-4">
-                  <NavLink to="/login">
+                  {user ? (
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-                      whileHover={{ scale: 1.1, rotate: 2, transition: { duration: 0.3 } }}
-                      className="rounded-md bg-[#D81B60] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300"
+                      whileHover={{ scale: 1.1, transition: { duration: 0.3 } }}
+                      className="rounded-md bg-[#D81B60] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300 cursor-pointer"
                       style={{ fontFamily: 'Lato, sans-serif' }}
+                      onClick={handleLogout}
                     >
-                      Login
+                      Logout
                     </motion.div>
-                  </NavLink>
+                  ) : (
+                    <>
+                      <NavLink to="/login">
+                        <motion.div
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+                          whileHover={{ scale: 1.1, transition: { duration: 0.3 } }}
+                          className="rounded-md bg-[#D81B60] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300"
+                          style={{ fontFamily: 'Lato, sans-serif' }}
+                        >
+                          Login
+                        </motion.div>
+                      </NavLink>
 
-                  <div className="hidden sm:flex">
-                    <NavLink to="/register">
-                      <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeOut', delay: 0.3 }}
-                        whileHover={{ scale: 1.1, rotate: -2, transition: { duration: 0.3 } }}
-                        className="rounded-md bg-[#FFF8E1] px-5 py-2.5 text-sm font-medium text-[#D81B60] hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300"
-                        style={{ fontFamily: 'Lato, sans-serif' }}
-                      >
-                        Register
-                      </motion.div>
-                    </NavLink>
-                  </div>
+                      <div className="hidden sm:flex">
+                        <NavLink to="/register">
+                          <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.3 }}
+                            whileHover={{ scale: 1.1, transition: { duration: 0.3 } }}
+                            className="rounded-md bg-[#FFF8E1] px-5 py-2.5 text-sm font-medium text-[#D81B60] hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300"
+                            style={{ fontFamily: 'Lato, sans-serif' }}
+                          >
+                            Register
+                          </motion.div>
+                        </NavLink>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="block md:hidden">
@@ -200,6 +245,57 @@ const Navbar = () => {
                       </NavLink>
                     </motion.li>
                   ))}
+                  {user ? (
+                    <motion.li
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: navLinks.length * 0.1 }}
+                    >
+                      <button
+                        onClick={handleLogout}
+                        className="text-[#212121] transition-colors duration-300 hover:text-[#D81B60] cursor-pointer"
+                      >
+                        Logout
+                      </button>
+                    </motion.li>
+                  ) : (
+                    <>
+                      <motion.li
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: navLinks.length * 0.1 }}
+                      >
+                        <NavLink
+                          to="/login"
+                          onClick={() => setIsOpen(false)}
+                          className={({ isActive }) =>
+                            `text-[#212121] transition-colors duration-300 hover:text-[#D81B60] ${
+                              isActive ? 'text-[#D81B60] font-bold' : ''
+                            }`
+                          }
+                        >
+                          Login
+                        </NavLink>
+                      </motion.li>
+                      <motion.li
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, delay: (navLinks.length + 1) * 0.1 }}
+                      >
+                        <NavLink
+                          to="/register"
+                          onClick={() => setIsOpen(false)}
+                          className={({ isActive }) =>
+                            `text-[#212121] transition-colors duration-300 hover:text-[#D81B60] ${
+                              isActive ? 'text-[#D81B60] font-bold' : ''
+                            }`
+                          }
+                        >
+                          Register
+                        </NavLink>
+                      </motion.li>
+                    </>
+                  )}
                 </ul>
               </motion.div>
             )}

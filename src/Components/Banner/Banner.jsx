@@ -32,6 +32,7 @@ const Banner = () => {
       </div>
 
       <div className="relative flex flex-col items-center justify-center h-full text-center px-4 sm:px-6 lg:px-8 z-10 ">
+        
         <div className="max-w-4xl mx-auto">
           <h1
             className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#FFF8E1] animate-typewriter"
