@@ -30,9 +30,52 @@ const Register = () => {
     e.preventDefault();
     setError('');
     try {
-      const photoURL = photo ? URL.createObjectURL(photo) : '';
+      let photoURL = '';
+      if (photo) {
+        // Validate image file
+        if (!(photo instanceof File)) {
+          throw new Error('Invalid file selected. Please choose an image.');
+        }
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp'];
+        if (!validTypes.includes(photo.type)) {
+          throw new Error('Unsupported image format. Use JPG, PNG, GIF, or BMP.');
+        }
+        if (photo.size > 32 * 1024 * 1024) {
+          throw new Error('Image size exceeds 32 MB limit.');
+        }
+
+        const formData = new FormData();
+        formData.append('image', photo);
+        const imgbbKey = import.meta.env.VITE_IMGBB_KEY;
+
+        if (!imgbbKey) {
+          throw new Error('ImgBB API key is missing. Check your .env file.');
+        }
+        formData.append('key', imgbbKey);
+
+        console.log('Photo object:', photo);
+        console.log('ImgBB Key:', imgbbKey);
+        console.log('FormData entries:', [...formData.entries()]);
+
+        try {
+          const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+            timeout: 15000, // Increased timeout
+          });
+          if (response.data.success) {
+            photoURL = response.data.data.url;
+            console.log('ImgBB upload successful:', photoURL);
+          } else {
+            throw new Error(response.data.error?.message || 'Failed to upload image to ImgBB');
+          }
+        } catch (uploadError) {
+          console.error('ImgBB upload error:', uploadError.response?.data || uploadError.message);
+          throw new Error('Image upload failed: ' + (uploadError.response?.data?.error?.message || uploadError.message));
+        }
+      }
+
       const user = await createUser(email, password, name, photoURL);
       await mutation.mutateAsync({ name, email, uid: user.uid });
+
       Swal.fire({
         title: 'Registration Successful!',
         text: 'Welcome to Love Matrimony! Your account has been created.',
@@ -41,9 +84,11 @@ const Register = () => {
         timer: 1500,
         showConfirmButton: false,
       });
+
       navigate('/');
     } catch (err) {
       setError(err.message || 'Registration failed');
+      console.error('Registration error:', err);
       Swal.fire({
         title: 'Registration Failed',
         text: err.message || 'Unable to create account. Please try again.',
@@ -81,7 +126,11 @@ const Register = () => {
         </motion.h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {[['Name', name, setName, 'text'], ['Email', email, setEmail, 'email'], ['Password', password, setPassword, 'password']].map(([label, value, setter, type], i) => (
+          {[
+            ['Name', name, setName, 'text'],
+            ['Email', email, setEmail, 'email'],
+            ['Password', password, setPassword, 'password'],
+          ].map(([label, value, setter, type], i) => (
             <motion.div key={label} custom={i} initial="hidden" animate="visible" variants={inputVariants}>
               <label className="block text-[#212121] font-lato font-semibold mb-1">{label}</label>
               <input

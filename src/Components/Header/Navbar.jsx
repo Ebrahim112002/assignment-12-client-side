@@ -50,27 +50,40 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
+    logout();
+    setIsOpen(false); // Close mobile menu on logout
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will be logged out of your account.',
-      icon: 'warning',
-      showCancelButton: true,
+      title: 'Logged Out Successfully!',
+      text: 'You have been logged out of ForeverVows.',
+      icon: 'success',
+      confirmButtonText: 'OK',
       confirmButtonColor: '#D81B60',
-      cancelButtonColor: '#212121',
-      confirmButtonText: 'Yes, log out!',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        logout();
-        setIsOpen(false); // Close mobile menu on logout
-        Swal.fire({
-          title: 'Logged Out!',
-          text: 'You have successfully logged out.',
-          icon: 'success',
-          confirmButtonColor: '#D81B60',
-          timer: 1500,
-          showConfirmButton: false,
+      background: '#FFF8E1',
+      color: '#212121',
+      iconColor: '#FFD700',
+      customClass: {
+        title: 'font-playfair text-2xl',
+        content: 'font-lato text-base',
+        confirmButton: 'font-lato rounded-md px-4 py-2 shadow-sm hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300',
+      },
+      backdrop: `
+        rgba(248, 187, 208, 0.4)
+        url("https://www.transparenttextures.com/patterns/hearts.png")
+        center
+        no-repeat
+      `,
+      timer: 2000,
+      timerProgressBar: true,
+      showConfirmButton: true,
+      willOpen: () => {
+        Swal.getPopup().animate({
+          scale: [0.8, 1.05, 1],
+          opacity: [0, 1],
+        }, {
+          duration: 600,
+          easing: 'ease-out',
         });
-      }
+      },
     });
   };
 
@@ -314,6 +327,12 @@ const Navbar = () => {
             .hover\\:scale-105, .hover\\:scale-110, .hover\\:rotate-2, .hover\\:rotate--2 {
               transform: none;
             }
+          }
+          .font-playfair {
+            font-family: 'Playfair Display', serif;
+          }
+          .font-lato {
+            font-family: 'Lato', sans-serif;
           }
         `}
       </style>

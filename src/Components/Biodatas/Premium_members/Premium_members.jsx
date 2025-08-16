@@ -1,0 +1,222 @@
+import React, { useState } from 'react';
+import { useLoaderData, NavLink } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Card animation variants
+const cardVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { delay: i * 0.15, duration: 0.6, ease: 'easeOut' },
+  }),
+  hover: { scale: 1.03, boxShadow: '0 12px 24px rgba(216, 27, 96, 0.2)', transition: { duration: 0.3 } },
+};
+
+// Image zoom animation
+const imageVariants = {
+  initial: { scale: 1 },
+  hover: { scale: 1.1, transition: { duration: 0.3 } },
+};
+
+// Dropdown animation variants
+const dropdownVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+};
+
+const Premium_members = () => {
+  const data = useLoaderData();
+  const [sortOrder, setSortOrder] = useState('ascending');
+
+  // Sort data based on age
+  const sortedData = [...data].sort((a, b) =>
+    sortOrder === 'ascending' ? a.age - b.age : b.age - a.age
+  );
+
+  // Limit to 6 profiles
+  const displayedData = sortedData.slice(0, 6);
+
+  return (
+    <div className="bg-gradient-to-b from-[#FFF8E1] to-[#F8BBD0] py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="text-center mb-12"
+        >
+          <h2
+            className="text-4xl sm:text-5xl font-bold text-[#D81B60] tracking-tight"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          >
+            Our Premium Members
+          </h2>
+          <p
+            className="mt-3 text-lg sm:text-xl text-[#212121] max-w-2xl mx-auto"
+            style={{ fontFamily: 'Lato, sans-serif' }}
+          >
+            Discover exclusive profiles curated for meaningful connections
+          </p>
+        </motion.div>
+
+        {/* Dropdown for Sorting */}
+        <div className="flex justify-end mb-10">
+          <motion.div
+            variants={dropdownVariants}
+            initial="hidden"
+            animate="visible"
+            className="relative w-48"
+          >
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="appearance-none w-full bg-gradient-to-r from-[#D81B60] to-[#F8BBD0] text-white rounded-lg px-4 py-2.5 pr-8 focus:outline-none focus:ring-2 focus:ring-[#FFD700] shadow-md hover:bg-gradient-to-r hover:from-[#F8BBD0] hover:to-[#D81B60] transition-colors duration-300"
+              style={{ fontFamily: 'Lato, sans-serif' }}
+            >
+              <option value="ascending" className="bg-[#FFF8E1] text-[#212121]">
+                Age: Ascending
+              </option>
+              <option value="descending" className="bg-[#FFF8E1] text-[#212121]">
+                Age: Descending
+              </option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg
+                className="w-5 h-5 text-[#FFD700]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Profile Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <AnimatePresence>
+            {displayedData.map((profile, index) => (
+              <motion.div
+                key={profile._id}
+                custom={index}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={cardVariants}
+                whileHover="hover"
+                className="relative bg-white rounded-xl overflow-hidden border-2 border-transparent bg-gradient-to-r from-[#D81B60]/10 to-[#FFD700]/10 shadow-lg"
+              >
+                {/* Premium Badge */}
+                <div className="absolute top-4 right-4 bg-[#FFD700] text-[#212121] text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+                  <svg
+                    className="w-4 h-4 text-[#D81B60]"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                  Premium
+                </div>
+                {/* Profile Image */}
+                <motion.div variants={imageVariants} className="overflow-hidden">
+                  <img
+                    src={profile.profileImage}
+                    alt={profile.name}
+                    className="w-full h-56 object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/150';
+                    }}
+                  />
+                </motion.div>
+                <div className="p-6">
+                  <h3
+                    className="text-xl sm:text-2xl font-semibold text-[#212121] truncate"
+                    style={{ fontFamily: 'Playfair Display, serif' }}
+                  >
+                    {profile.name}
+                  </h3>
+                  <p
+                    className="text-sm text-[#D81B60] mt-2"
+                    style={{ fontFamily: 'Lato, sans-serif' }}
+                  >
+                    Biodata ID: {profile._id.slice(-6)}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    <p
+                      className="text-sm text-[#212121]"
+                      style={{ fontFamily: 'Lato, sans-serif' }}
+                    >
+                      <span className="font-medium">Type:</span> {profile.biodataType}
+                    </p>
+                    <p
+                      className="text-sm text-[#212121]"
+                      style={{ fontFamily: 'Lato, sans-serif' }}
+                    >
+                      <span className="font-medium">Age:</span> {profile.age}
+                    </p>
+                    <p
+                      className="text-sm text-[#212121] truncate"
+                      style={{ fontFamily: 'Lato, sans-serif' }}
+                    >
+                      <span className="font-medium">Occupation:</span> {profile.occupation}
+                    </p>
+                    <p
+                      className="text-sm text-[#212121]"
+                      style={{ fontFamily: 'Lato, sans-serif' }}
+                    >
+                      <span className="font-medium">Division:</span> {profile.permanentDivision}
+                    </p>
+                  </div>
+                  <NavLink to={`/biodata/${profile._id}`}>
+                    <motion.button
+                      whileHover={{ scale: 1.05, backgroundColor: '#FFD700', color: '#212121' }}
+                      whileTap={{ scale: 0.95 }}
+                      className="mt-4 w-full bg-[#D81B60] text-white px-4 py-2.5 rounded-lg shadow-md hover:bg-[#FFD700] hover:text-[#212121] transition-colors duration-300 text-sm font-medium"
+                      style={{ fontFamily: 'Lato, sans-serif' }}
+                    >
+                      View Profile
+                    </motion.button>
+                  </NavLink>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Custom CSS for Theme Consistency */}
+      <style>
+        {`
+          @media (prefers-reduced-motion: reduce) {
+            .motion-div, .motion-button {
+              animation: none;
+              transition: none;
+            }
+            .hover\\:scale-103, .hover\\:scale-105, .hover\\:scale-110 {
+              transform: none;
+            }
+          }
+          .font-playfair {
+            font-family: 'Playfair Display', serif;
+          }
+          .font-lato {
+            font-family: 'Lato, sans-serif';
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+export default Premium_members;
