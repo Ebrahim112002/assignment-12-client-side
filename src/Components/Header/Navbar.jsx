@@ -39,7 +39,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Biodatas', path: '/biodatas' },
+    { name: 'Biodatas', path: '/all-biodatas' },
     { name: 'About Us', path: '/about' },
     { name: 'Contact Us', path: '/contact' },
     ...(user ? [{ name: 'Dashboard', path: '/dashboard' }] : []),
