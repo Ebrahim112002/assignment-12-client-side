@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Authcontext } from '../Auth/Authcontext';
+import { auth } from '../../Firebase/firebase.init';
+
 
 const Register = () => {
-  const { createUser } = useContext(Authcontext);
+  const { createUser, currentUser } = useContext(Authcontext); // Access currentUser from context
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,13 +19,28 @@ const Register = () => {
 
   const mutation = useMutation({
     mutationFn: async ({ name, email, uid }) => {
+      // Use currentUser from context or fallback to Firebase auth
+      const user = currentUser || auth.currentUser;
+      if (!user) {
+        throw new Error('User is not authenticated. Please try again.');
+      }
+      const token = await user.getIdToken(); // Get the Firebase ID token
+      console.log('Sending to backend:', { name, email, role: 'user', uid });
       return await axios.post(
         'http://localhost:3000/users',
         { name, email, role: 'user', uid },
-        { timeout: 5000 }
+        {
+          timeout: 5000,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
     },
-    onError: (error) => setError(error.message || 'Failed to save user data'),
+    onError: (error) => {
+      console.error('Mutation error:', error.response?.data || error.message);
+      setError(error.response?.data?.error?.message || error.message || 'Failed to save user data');
+    },
   });
 
   const handleSubmit = async (e) => {
@@ -32,7 +49,6 @@ const Register = () => {
     try {
       let photoURL = '';
       if (photo) {
-        // Validate image file
         if (!(photo instanceof File)) {
           throw new Error('Invalid file selected. Please choose an image.');
         }
@@ -57,23 +73,30 @@ const Register = () => {
         console.log('ImgBB Key:', imgbbKey);
         console.log('FormData entries:', [...formData.entries()]);
 
-        try {
-          const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
-            timeout: 15000, // Increased timeout
-          });
-          if (response.data.success) {
-            photoURL = response.data.data.url;
-            console.log('ImgBB upload successful:', photoURL);
-          } else {
-            throw new Error(response.data.error?.message || 'Failed to upload image to ImgBB');
-          }
-        } catch (uploadError) {
-          console.error('ImgBB upload error:', uploadError.response?.data || uploadError.message);
-          throw new Error('Image upload failed: ' + (uploadError.response?.data?.error?.message || uploadError.message));
+        const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+          timeout: 15000,
+        });
+        if (response.data.success) {
+          photoURL = response.data.data.url;
+          console.log('ImgBB upload successful:', photoURL);
+        } else {
+          throw new Error(response.data.error?.message || 'Failed to upload image to ImgBB');
         }
       }
 
       const user = await createUser(email, password, name, photoURL);
+      console.log('Firebase user:', user); // Debug the user object
+
+      // Wait for Firebase auth state to update (optional, to ensure currentUser is set)
+      await new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+          if (firebaseUser) {
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
       await mutation.mutateAsync({ name, email, uid: user.uid });
 
       Swal.fire({

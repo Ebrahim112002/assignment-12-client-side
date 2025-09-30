@@ -2,8 +2,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { useLoaderData, NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
-import { Authcontext } from "../../Authicantion/Auth/Authcontext";
+
 import { Heart, Mail, Phone, User } from "lucide-react"; // icons
+import { Authcontext } from "../../Authicantion/Auth/Authcontext";
 
 // Animation Variants
 const cardVariants = {
@@ -32,6 +33,8 @@ const BiodatasDetails = () => {
   const navigate = useNavigate();
   const [similarBiodatas, setSimilarBiodatas] = useState([]);
   const [error, setError] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favorites, setFavorites] = useState([]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -44,6 +47,37 @@ const BiodatasDetails = () => {
       setError("Failed to load biodata details. Please try again.");
     }
   }, [biodata]);
+
+  // Fetch user favorites on mount
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!user) return;
+      
+      try {
+        const token = user.accessToken;
+        const res = await fetch("http://localhost:3000/favourites", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setFavorites(data);
+          // Check if current biodata is in favorites
+          const isFav = data.some(fav => fav.biodata_id.toString() === biodata._id);
+          setIsFavorite(isFav);
+        }
+      } catch (err) {
+        console.error("Error fetching favorites:", err);
+      }
+    };
+
+    if (user) {
+      fetchFavorites();
+    }
+  }, [user, biodata._id]);
 
   // Fetch similar biodatas
   useEffect(() => {
@@ -65,8 +99,8 @@ const BiodatasDetails = () => {
     fetchSimilar();
   }, [biodata]);
 
-  // Add to favourites
-  const handleAddToFavourites = async () => {
+  // Handle adding/removing from favourites
+  const handleToggleFavorite = async () => {
     if (!user || !biodata?._id) {
       Swal.fire({
         toast: true,
@@ -82,33 +116,84 @@ const BiodatasDetails = () => {
       return;
     }
 
+    const token = user.accessToken;
+    if (!token) {
+      Swal.fire({
+        toast: true,
+        icon: "error",
+        title: "Authentication error",
+        text: "No token found. Please log in again.",
+        timer: 2000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+      navigate("/login");
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:3000/favourites", {
-        method: "POST",
+      const url = isFavorite 
+        ? `http://localhost:3000/favourites/${biodata._id}`
+        : "http://localhost:3000/favourites";
+
+      const method = isFavorite ? "DELETE" : "POST";
+
+      console.log(`Sending ${method} request with token:`, token);
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userEmail: user.email, biodataId: biodata._id }),
+        body: method === "POST" ? JSON.stringify({ biodata_id: biodata._id }) : null,
       });
 
+      const data = await res.json();
+      console.log("Server response:", data);
+
       if (res.ok) {
+        setIsFavorite(!isFavorite);
+        const action = isFavorite ? "removed" : "added";
         Swal.fire({
           toast: true,
           icon: "success",
-          title: "Added to favourites",
+          title: `${action.charAt(0).toUpperCase() + action.slice(1)} from favourites`,
+          text: `This profile has been ${action} to your favorites list!`,
           timer: 2000,
           position: "top-end",
           showConfirmButton: false,
           background: "#FFF8E1",
           color: "#212121",
         });
+
+        // Update local favorites state
+        if (method === "POST") {
+          setFavorites(prev => [...prev, { biodata_id: biodata._id, biodataDetails: biodata }]);
+        } else {
+          setFavorites(prev => prev.filter(fav => fav.biodata_id.toString() !== biodata._id));
+        }
+      } else {
+        Swal.fire({
+          toast: true,
+          icon: "error",
+          title: data.error || "Failed to update",
+          text: data.details || "Could not update favorites. Please try again.",
+          timer: 3000,
+          position: "top-end",
+          showConfirmButton: false,
+          background: "#FFF8E1",
+          color: "#212121",
+        });
       }
-    } catch {
+    } catch (err) {
+      console.error("Error updating favorites:", err);
       Swal.fire({
         toast: true,
         icon: "error",
-        title: "Failed to add",
+        title: "Failed to update",
+        text: "An error occurred. Please try again.",
         timer: 2000,
         position: "top-end",
         showConfirmButton: false,
@@ -195,7 +280,7 @@ const BiodatasDetails = () => {
         >
           <div className="flex flex-col md:flex-row">
             {/* Profile Image */}
-            <motion.div  className="md:w-1/3 overflow-hidden">
+            <motion.div className="md:w-1/3 overflow-hidden">
               <img
                 src={biodata.profileImage}
                 alt={biodata.name}
@@ -212,7 +297,7 @@ const BiodatasDetails = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-lato text-sm text-[#212121]">
                 <p><span className="font-medium">Biodata ID:</span> {biodata._id}</p>
                 <p><span className="font-medium">Type:</span> {biodata.biodataType}</p>
-                <p><span className="font-medium">DOB:</span> {biodata.dateOfBirth}</p>
+                <p><span className="font-medium">DOB:</span> {biodata.dateOfBirth || biodata.dob}</p>
                 <p><span className="font-medium">Age:</span> {biodata.age}</p>
                 <p><span className="font-medium">Height:</span> {biodata.height}</p>
                 <p><span className="font-medium">Weight:</span> {biodata.weight}</p>
@@ -249,10 +334,19 @@ const BiodatasDetails = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={handleAddToFavourites}
-                  className="flex items-center justify-center gap-2 w-full bg-[#D81B60] text-white px-4 py-2.5 rounded-xl shadow-md hover:bg-[#FFD700] hover:text-[#212121] font-lato"
+                  onClick={handleToggleFavorite}
+                  className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl shadow-md font-lato transition-all duration-300 ${
+                    isFavorite
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-[#D81B60] text-white hover:bg-[#FFD700] hover:text-[#212121]'
+                  }`}
                 >
-                  <Heart size={16} /> Add to Favourites
+                  <Heart 
+                    size={16} 
+                    className={isFavorite ? 'fill-current' : ''} 
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {isFavorite ? 'Remove from Favourites' : 'Add to Favourites'}
                 </motion.button>
               </div>
             </div>

@@ -14,6 +14,15 @@ import BiodatasDtails from "../Components/Biodatas/Premium_members/BiodatasDtail
 import AllBiodatas from "../Components/Biodatas/Premium_members/AllBiodatas";
 import AboutUs from "../Components/About/AboutUs";
 import ContactUs from "../Components/Contact/ContactUs";
+import Dashboard_home from "../Components/Normal_user/Dashboard/Dashboard_home";
+import Dashboard_nav from "../Components/Normal_user/Dashboard/Dashboard_nav";
+import EditBiodata from "../Components/Normal_user/Biodata/EditBiodata";
+import ViewBiodata from "../Components/Normal_user/Biodata/ViewBiodata";
+import Create_Biodata from "../Components/Normal_user/Biodata/Create_Biodata";
+import Checkout from "../Components/Normal_user/Checkout/Checkout";
+import Favorite from "../Components/Normal_user/Favorite/Favorite";
+import User from "../Components/Admin_Control/User";
+
 
 export const router = createBrowserRouter([
   {
@@ -53,5 +62,40 @@ export const router = createBrowserRouter([
       Component:Login,
     }
    ]
+  },
+  {
+    path: '/dashboard',
+     Component: Dashboard_nav,
+    children: [
+      {
+        index: true,
+       Component: Dashboard_home,
+      },
+      {
+        path: '/dashboard/create-biodata',
+        Component: Create_Biodata,
+      },
+      {
+        path: '/dashboard/edit-biodata',
+        Component: EditBiodata,
+      },
+      {
+        path: '/dashboard/view-biodata',
+        Component: ViewBiodata,
+      },
+      {
+        path:'/dashboard/contact-requests',
+        Component:Checkout
+      },
+      {
+        path:'/dashboard/favorites',
+        Component:Favorite
+      },
+      {
+        path:'/dashboard/all-users',
+        Component:User
+      },
+
+    ],
   },
 ]);

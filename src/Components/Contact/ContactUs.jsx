@@ -83,23 +83,7 @@ const ContactUs = () => (
         </motion.button>
       </motion.form>
 
-      {/* Optional: Google Map Embed */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="mt-12 w-full h-60 overflow-hidden rounded-xl shadow-lg"
-      >
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3650.0000000000005!2d90.4203!3d23.7777!2m3!1f0!2f0!3f0"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen=""
-          loading="lazy"
-          title="Office Location"
-        ></iframe>
-      </motion.div>
+     
     </div>
   </div>
 );
