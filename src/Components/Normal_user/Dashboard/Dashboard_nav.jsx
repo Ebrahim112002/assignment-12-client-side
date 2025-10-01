@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { FaHome, FaUserEdit, FaUser, FaEnvelope, FaStar, FaBars, FaUsers, FaDollarSign } from 'react-icons/fa';
+import {FaHeart, FaHome, FaUserEdit, FaUser, FaEnvelope, FaStar, FaBars, FaUsers, FaDollarSign } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -51,7 +51,7 @@ const Dashboard_nav = () => {
   ];
 
   const adminNavItems = [
-    { path: '/dashboard/admin-home', label: 'Admin Home', icon: FaHome },
+    { path: '/dashboard', label: 'Admin Home', icon: FaHome },
     { path: '/dashboard/manage-users', label: 'Manage Users', icon: FaUsers },
     { path: '/dashboard/manage-biodatas', label: 'Manage Biodatas', icon: FaUserEdit },
     { path: '/dashboard/approve-premium', label: 'Approve Premium', icon: FaStar },

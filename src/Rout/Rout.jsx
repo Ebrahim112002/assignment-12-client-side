@@ -23,6 +23,7 @@ import Checkout from "../Components/Normal_user/Checkout/Checkout";
 import Favorite from "../Components/Normal_user/Favorite/Favorite";
 import User from "../Components/Admin_Control/User";
 import UpgradePremium from "../Components/Normal_user/upgrade/UpgradePremium";
+import ManageBiodatas from "../Components/Admin_Control/Manage Biodatas/ManageBiodatas";
 
 
 export const router = createBrowserRouter([
@@ -93,12 +94,16 @@ export const router = createBrowserRouter([
         Component:Favorite
       },
       {
-        path:'/dashboard/all-users',
+        path:'/dashboard/manage-users',
         Component:User
       },
       {
         path:'/dashboard/upgrade-premium',
         Component:UpgradePremium
+      },
+      {
+        path:'/dashboard/manage-biodatas',
+        Component:ManageBiodatas
       },
 
     ],
