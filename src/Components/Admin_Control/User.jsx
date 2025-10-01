@@ -116,7 +116,7 @@ const User = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-[#D81B60] font-[Playfair Display]">All Users</h1>
-      {isAdmin ? (
+      {!isAdmin ? (
         <div className="text-red-500 text-lg">
           Access Denied: You must be an admin to view and manage users.
         </div>

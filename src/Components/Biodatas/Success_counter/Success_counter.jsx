@@ -31,31 +31,35 @@ const storyVariants = {
 };
 
 const SuccessCounter = () => {
-  const biodata = useLoaderData();
+  const loaderData = useLoaderData();
+
+  // Ensure biodata is always an array
+  const biodata = Array.isArray(loaderData) ? loaderData : loaderData?.biodata || [];
+
   const [successStories, setSuccessStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Calculate stats
-  const totalBiodata = biodata?.length || 0;
-  const males = biodata?.filter((entry) => entry.biodataType === "Male").length || 0;
-  const females = biodata?.filter((entry) => entry.biodataType === "Female").length || 0;
-  const married = successStories.length || 0;
+  const totalBiodata = biodata.length;
+  const males = biodata.filter((entry) => entry.biodataType === "Male").length;
+  const females = biodata.filter((entry) => entry.biodataType === "Female").length;
+  const married = successStories.length;
 
   // Fetch success stories
   useEffect(() => {
     setIsLoading(true);
     fetch("http://localhost:3000/success-counter")
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to fetch success stories");
-        return response.json();
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch success stories");
+        return res.json();
       })
       .then((data) => {
-        setSuccessStories(data);
+        setSuccessStories(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
-      .catch((error) => {
-        setError(error.message);
+      .catch((err) => {
+        setError(err.message);
         setIsLoading(false);
       });
   }, []);
@@ -103,7 +107,7 @@ const SuccessCounter = () => {
         </div>
       </motion.section>
 
-      {/* Success Stories */}
+      {/* Success Stories Section */}
       <motion.section
         className="max-w-7xl mx-auto px-6 lg:px-10"
         variants={sectionVariants}

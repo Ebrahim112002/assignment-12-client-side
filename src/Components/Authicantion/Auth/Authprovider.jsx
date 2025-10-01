@@ -33,6 +33,7 @@ const AuthProvider = ({ children }) => {
         { headers: { Authorization: `Bearer ${idToken}` }, timeout: 5000 }
       );
 
+      localStorage.setItem('token', idToken);
       setToken(idToken);
       return newUser;
     } catch (error) {
@@ -63,6 +64,7 @@ const AuthProvider = ({ children }) => {
         if (err.response?.status !== 409) throw err;
       }
 
+      localStorage.setItem('token', idToken);
       setToken(idToken);
       return user;
     } catch (error) {
@@ -78,6 +80,7 @@ const AuthProvider = ({ children }) => {
       await signOut(auth);
       setUser(null);
       setToken(null);
+      localStorage.removeItem('token');
     } catch (error) {
       console.error('Logout error:', error.message);
     } finally {
@@ -91,6 +94,7 @@ const AuthProvider = ({ children }) => {
       if (currentUser) {
         try {
           const idToken = await currentUser.getIdToken(true); // force refresh
+          localStorage.setItem('token', idToken);
           setToken(idToken);
 
           // Fetch user info from backend
@@ -108,6 +112,7 @@ const AuthProvider = ({ children }) => {
       } else {
         setUser(null);
         setToken(null);
+        localStorage.removeItem('token');
       }
       setLoading(false);
     });
@@ -122,6 +127,7 @@ const AuthProvider = ({ children }) => {
     const interval = setInterval(async () => {
       try {
         const idToken = await auth.currentUser.getIdToken(true);
+        localStorage.setItem('token', idToken);
         setToken(idToken);
       } catch (error) {
         console.error('Token refresh error:', error.message);
