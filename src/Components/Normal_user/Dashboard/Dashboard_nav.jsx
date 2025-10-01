@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { FaHeart, FaHome, FaUserEdit, FaUser, FaEnvelope, FaStar, FaBars, FaUsers } from 'react-icons/fa';
+import { FaHome, FaUserEdit, FaUser, FaEnvelope, FaStar, FaBars, FaUsers, FaDollarSign } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -17,10 +17,11 @@ const Dashboard_nav = () => {
   // Fetch user biodata status
   useEffect(() => {
     const fetchBiodataStatus = async () => {
+      if (!user?.email) return;
       try {
         const response = await axios.get('http://localhost:3000/biodatas', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-          params: { email: localStorage.getItem('userEmail') },
+          params: { email: user.email },
         });
         setHasBiodata(response.data.length > 0);
       } catch (error) {
@@ -34,9 +35,9 @@ const Dashboard_nav = () => {
       }
     };
     fetchBiodataStatus();
-  }, []);
+  }, [user]);
 
-  const navItems = [
+  const baseNavItems = [
     { path: '/dashboard', label: 'Dashboard', icon: FaHome },
     {
       path: hasBiodata ? '/dashboard/edit-biodata' : '/dashboard/create-biodata',
@@ -44,10 +45,24 @@ const Dashboard_nav = () => {
       icon: FaUserEdit,
     },
     { path: '/dashboard/view-biodata', label: 'View Biodata', icon: FaUser },
+    { path: '/dashboard/upgrade-premium', label: 'Upgrade to Premium', icon: FaStar },
     { path: '/dashboard/contact-requests', label: 'Contact Requests', icon: FaEnvelope },
-    { path: '/dashboard/favorites', label: 'Favourites', icon: FaStar },
-    { path: '/dashboard/all-users', label: 'All Users', icon: FaUsers }, // Added All Users nav item
+    { path: '/dashboard/favorites', label: 'Favourites', icon: FaHeart },
   ];
+
+  const adminNavItems = [
+    { path: '/dashboard/admin-home', label: 'Admin Home', icon: FaHome },
+    { path: '/dashboard/manage-users', label: 'Manage Users', icon: FaUsers },
+    { path: '/dashboard/manage-biodatas', label: 'Manage Biodatas', icon: FaUserEdit },
+    { path: '/dashboard/approve-premium', label: 'Approve Premium', icon: FaStar },
+    { path: '/dashboard/approve-contact-requests', label: 'Approve Contact Requests', icon: FaEnvelope },
+    { path: '/dashboard/manage-payments', label: 'Manage Payments', icon: FaDollarSign },
+  ];
+
+  // Conditionally select nav items
+  const navItems = user?.role === 'admin' 
+    ? adminNavItems
+    : baseNavItems;
 
   // Animation variants for nav items
   const navItemVariants = {

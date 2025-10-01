@@ -35,6 +35,8 @@ const BiodatasDetails = () => {
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favorites, setFavorites] = useState([]);
+  const [requestStatus, setRequestStatus] = useState('none'); // 'none', 'pending', 'approved', 'rejected'
+  const [myRequests, setMyRequests] = useState([]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -48,34 +50,54 @@ const BiodatasDetails = () => {
     }
   }, [biodata]);
 
-  // Fetch user favorites on mount
+  // Fetch user favorites and contact requests on mount
   useEffect(() => {
-    const fetchFavorites = async () => {
+    const fetchData = async () => {
       if (!user) return;
       
+      const token = user.accessToken || localStorage.getItem('token');
+
       try {
-        const token = user.accessToken;
-        const res = await fetch("http://localhost:3000/favourites", {
+        // Fetch favorites
+        const favRes = await fetch("http://localhost:3000/favourites?email=" + user.email, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
         
-        if (res.ok) {
-          const data = await res.json();
-          setFavorites(data);
+        if (favRes.ok) {
+          const favData = await favRes.json();
+          setFavorites(favData);
           // Check if current biodata is in favorites
-          const isFav = data.some(fav => fav.biodata_id.toString() === biodata._id);
+          const isFav = favData.some(fav => fav.biodata[0]?._id === biodata._id);
           setIsFavorite(isFav);
         }
+
+        // Fetch my contact requests
+        const reqRes = await fetch("http://localhost:3000/my-contact-requests", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (reqRes.ok) {
+          const reqData = await reqRes.json();
+          setMyRequests(reqData);
+          // Check status for current biodata
+          const currentReq = reqData.find(req => req.requestedBiodataId === biodata._id);
+          if (currentReq) {
+            setRequestStatus(currentReq.status);
+          }
+        }
       } catch (err) {
-        console.error("Error fetching favorites:", err);
+        console.error("Error fetching data:", err);
       }
     };
 
     if (user) {
-      fetchFavorites();
+      fetchData();
     }
   }, [user, biodata._id]);
 
@@ -85,9 +107,7 @@ const BiodatasDetails = () => {
       try {
         if (!biodata?._id) return;
         const res = await fetch(
-          `http://localhost:3000/biodatas?filter=${
-            biodata.biodataType || biodata.permanentDivision
-          }`
+          `http://localhost:3000/biodatas`
         );
         if (!res.ok) throw new Error("Failed to fetch similar biodatas");
         const data = await res.json();
@@ -116,7 +136,7 @@ const BiodatasDetails = () => {
       return;
     }
 
-    const token = user.accessToken;
+    const token = user.accessToken || localStorage.getItem('token');
     if (!token) {
       Swal.fire({
         toast: true,
@@ -170,9 +190,9 @@ const BiodatasDetails = () => {
 
         // Update local favorites state
         if (method === "POST") {
-          setFavorites(prev => [...prev, { biodata_id: biodata._id, biodataDetails: biodata }]);
+          setFavorites(prev => [...prev, { biodata_id: biodata._id, biodata: [biodata] }]);
         } else {
-          setFavorites(prev => prev.filter(fav => fav.biodata_id.toString() !== biodata._id));
+          setFavorites(prev => prev.filter(fav => fav.biodata_id !== biodata._id));
         }
       } else {
         Swal.fire({
@@ -203,19 +223,136 @@ const BiodatasDetails = () => {
     }
   };
 
-  // Request contact
-  const handleRequestContact = () => {
-    Swal.fire({
-      toast: true,
-      icon: "info",
-      title: "Redirecting to checkout",
-      timer: 2000,
-      position: "top-end",
-      showConfirmButton: false,
-      background: "#FFF8E1",
-      color: "#212121",
-    });
-    setTimeout(() => navigate("/checkout"), 2000);
+  // Handle contact request
+  const handleRequestContact = async () => {
+    if (!user || !biodata?._id) {
+      Swal.fire({
+        toast: true,
+        icon: "error",
+        title: "Please log in",
+        text: "You need to log in to send a contact request",
+        timer: 2000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+      return;
+    }
+
+    const token = user.accessToken || localStorage.getItem('token');
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // If not premium, prompt upgrade
+    if (!user.isPremium) {
+      Swal.fire({
+        toast: true,
+        icon: "info",
+        title: "Upgrade Required",
+        text: "Upgrade to premium to send contact requests",
+        timer: 2000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+      setTimeout(() => navigate("/checkout"), 2000);
+      return;
+    }
+
+    // If already approved, do nothing (info already shown)
+    if (requestStatus === 'approved') {
+      return;
+    }
+
+    // If pending or rejected, inform
+    if (requestStatus === 'pending') {
+      Swal.fire({
+        toast: true,
+        icon: "info",
+        title: "Request Pending",
+        text: "Your contact request is pending admin approval.",
+        timer: 2000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+      return;
+    }
+
+    if (requestStatus === 'rejected') {
+      Swal.fire({
+        toast: true,
+        icon: "warning",
+        title: "Request Rejected",
+        text: "Your previous request was rejected. Please upgrade or try another profile.",
+        timer: 3000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+      setTimeout(() => navigate("/checkout"), 3000);
+      return;
+    }
+
+    // Send new request
+    try {
+      const res = await fetch("http://localhost:3000/contact-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ biodataId: biodata._id }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setRequestStatus('pending');
+        Swal.fire({
+          toast: true,
+          icon: "success",
+          title: "Request Sent",
+          text: "Your contact request has been sent. Waiting for admin approval.",
+          timer: 2000,
+          position: "top-end",
+          showConfirmButton: false,
+          background: "#FFF8E1",
+          color: "#212121",
+        });
+      } else {
+        Swal.fire({
+          toast: true,
+          icon: "error",
+          title: data.error || "Failed to send request",
+          text: data.details || "Could not send contact request. Please try again.",
+          timer: 3000,
+          position: "top-end",
+          showConfirmButton: false,
+          background: "#FFF8E1",
+          color: "#212121",
+        });
+      }
+    } catch (err) {
+      console.error("Error sending contact request:", err);
+      Swal.fire({
+        toast: true,
+        icon: "error",
+        title: "Failed to send",
+        text: "An error occurred. Please try again.",
+        timer: 2000,
+        position: "top-end",
+        showConfirmButton: false,
+        background: "#FFF8E1",
+        color: "#212121",
+      });
+    }
   };
 
   // Loader
@@ -251,6 +388,76 @@ const BiodatasDetails = () => {
       </div>
     );
   }
+
+  // Determine contact section
+  const renderContactSection = () => {
+    if (!user.isPremium) {
+      return (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("/checkout")}
+          className="mt-6 w-full bg-[#D81B60] text-white px-4 py-2.5 rounded-xl shadow-md hover:bg-[#FFD700] hover:text-[#212121] font-lato"
+        >
+          Upgrade to Premium to Request Contact
+        </motion.button>
+      );
+    }
+
+    if (requestStatus === 'approved') {
+      return (
+        <div className="mt-6 p-4 bg-[#F8BBD0]/30 rounded-lg font-lato">
+          <h4 className="text-lg font-semibold text-[#D81B60] flex items-center gap-2 font-playfair">
+            <Mail size={18} /> Contact Info (Approved)
+          </h4>
+          <p className="mt-2"><Mail size={14} className="inline mr-1" /> {biodata.contactEmail}</p>
+          <p><Phone size={14} className="inline mr-1" /> {biodata.mobileNumber}</p>
+        </div>
+      );
+    }
+
+    if (requestStatus === 'pending') {
+      return (
+        <div className="mt-6 p-4 bg-yellow-100 rounded-lg font-lato">
+          <h4 className="text-lg font-semibold text-yellow-800 flex items-center gap-2">
+            <User size={18} /> Request Pending
+          </h4>
+          <p className="mt-2 text-yellow-700">Your contact request is pending admin approval.</p>
+        </div>
+      );
+    }
+
+    if (requestStatus === 'rejected') {
+      return (
+        <div className="mt-6 p-4 bg-red-100 rounded-lg font-lato">
+          <h4 className="text-lg font-semibold text-red-800 flex items-center gap-2">
+            <User size={18} /> Request Rejected
+          </h4>
+          <p className="mt-2 text-red-700">Your request was rejected. Please upgrade or try another profile.</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/checkout")}
+            className="mt-2 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+          >
+            Upgrade to Premium
+          </motion.button>
+        </div>
+      );
+    }
+
+    // Default: Show request button for premium
+    return (
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleRequestContact}
+        className="mt-6 w-full bg-[#D81B60] text-white px-4 py-2.5 rounded-xl shadow-md hover:bg-[#FFD700] hover:text-[#212121] font-lato"
+      >
+        Send Contact Request
+      </motion.button>
+    );
+  };
 
   return (
     <div className="bg-gradient-to-b from-[#FFF8E1] to-[#F8BBD0] py-16 px-4 sm:px-6 lg:px-8">
@@ -309,25 +516,8 @@ const BiodatasDetails = () => {
                 <p><span className="font-medium">Marital Status:</span> {biodata.maritalStatus}</p>
               </div>
 
-              {/* Contact */}
-              {user?.isPremium ? (
-                <div className="mt-6 p-4 bg-[#F8BBD0]/30 rounded-lg font-lato">
-                  <h4 className="text-lg font-semibold text-[#D81B60] flex items-center gap-2 font-playfair">
-                    <Mail size={18} /> Contact Info
-                  </h4>
-                  <p className="mt-2"><Mail size={14} className="inline mr-1" /> {biodata.contactEmail}</p>
-                  <p><Phone size={14} className="inline mr-1" /> {biodata.mobileNumber}</p>
-                </div>
-              ) : (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleRequestContact}
-                  className="mt-6 w-full bg-[#D81B60] text-white px-4 py-2.5 rounded-xl shadow-md hover:bg-[#FFD700] hover:text-[#212121] font-lato"
-                >
-                  Request Contact Info
-                </motion.button>
-              )}
+              {/* Contact Section */}
+              {renderContactSection()}
 
               {/* Action Buttons */}
               <div className="mt-6">
