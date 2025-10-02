@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Authcontext } from '../../Authicantion/Auth/Authcontext';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const PremiumApproved = () => {
   const { user, token, loading: authLoading } = useContext(Authcontext);
@@ -75,10 +76,22 @@ const PremiumApproved = () => {
       }
 
       setRequests(requests.filter((req) => req.email !== email));
-      alert('Premium request approved successfully');
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Premium request approved successfully',
+        confirmButtonText: 'OK',
+        timer: 3000,
+        timerProgressBar: true,
+      });
     } catch (err) {
       console.error('Error approving request:', err);
-      setError('Failed to approve request. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to approve request. Please try again.',
+        confirmButtonText: 'OK',
+      });
     }
   };
 
@@ -98,10 +111,22 @@ const PremiumApproved = () => {
       }
 
       setRequests(requests.filter((req) => req.email !== email));
-      alert('Premium request rejected successfully');
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Premium request rejected successfully',
+        confirmButtonText: 'OK',
+        timer: 3000,
+        timerProgressBar: true,
+      });
     } catch (err) {
       console.error('Error rejecting request:', err);
-      setError('Failed to reject request. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to reject request. Please try again.',
+        confirmButtonText: 'OK',
+      });
     }
   };
 
