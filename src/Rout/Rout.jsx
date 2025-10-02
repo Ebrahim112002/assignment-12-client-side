@@ -24,6 +24,9 @@ import Favorite from "../Components/Normal_user/Favorite/Favorite";
 import User from "../Components/Admin_Control/User";
 import UpgradePremium from "../Components/Normal_user/upgrade/UpgradePremium";
 import ManageBiodatas from "../Components/Admin_Control/Manage Biodatas/ManageBiodatas";
+import PremiumApproved from "../Components/Admin_Control/Approved/PremiumApproved";
+import ContactReq from "../Components/Admin_Control/Approved/ContactReq";
+import ManagePayments from "../Components/Admin_Control/Manage_payments/Manage_payments";
 
 
 export const router = createBrowserRouter([
@@ -104,6 +107,18 @@ export const router = createBrowserRouter([
       {
         path:'/dashboard/manage-biodatas',
         Component:ManageBiodatas
+      },
+      {
+        path:'/dashboard/approve-premium',
+        Component:PremiumApproved
+      },
+      {
+        path:'/dashboard/approve-contact-requests',
+        Component:ContactReq
+      },
+      {
+        path:'/dashboard/manage-payments',
+        Component:ManagePayments
       },
 
     ],
