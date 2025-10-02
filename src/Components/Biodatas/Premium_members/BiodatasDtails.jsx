@@ -60,7 +60,7 @@ const BiodatasDetails = () => {
 
       try {
         // Fetch user profile for premium status
-        const userRes = await fetch(`http://localhost:3000/users/${user.email}`, {
+        const userRes = await fetch(`https://matrimony-server-side-sigma.vercel.app/users/${user.email}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -72,7 +72,7 @@ const BiodatasDetails = () => {
         }
 
         // Fetch favorites
-        const favRes = await fetch("http://localhost:3000/favourites?email=" + user.email, {
+        const favRes = await fetch("https://matrimony-server-side-sigma.vercel.app/favourites?email=" + user.email, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -88,7 +88,7 @@ const BiodatasDetails = () => {
         }
 
         // Fetch my contact requests
-        const reqRes = await fetch("http://localhost:3000/my-contact-requests", {
+        const reqRes = await fetch("https://matrimony-server-side-sigma.vercel.app/my-contact-requests", {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -120,7 +120,7 @@ const BiodatasDetails = () => {
       try {
         if (!biodata?._id) return;
         const res = await fetch(
-          `http://localhost:3000/biodatas`
+          `https://matrimony-server-side-sigma.vercel.app/biodatas`
         );
         if (!res.ok) throw new Error("Failed to fetch similar biodatas");
         const data = await res.json();
@@ -168,8 +168,8 @@ const BiodatasDetails = () => {
 
     try {
       const url = isFavorite 
-        ? `http://localhost:3000/favourites/${biodata._id}`
-        : "http://localhost:3000/favourites";
+        ? `https://matrimony-server-side-sigma.vercel.app/favourites/${biodata._id}`
+        : "https://matrimony-server-side-sigma.vercel.app/favourites";
 
       const method = isFavorite ? "DELETE" : "POST";
 
@@ -315,7 +315,7 @@ const BiodatasDetails = () => {
 
     // Send new request
     try {
-      const res = await fetch("http://localhost:3000/contact-requests", {
+      const res = await fetch("https://matrimony-server-side-sigma.vercel.app/contact-requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

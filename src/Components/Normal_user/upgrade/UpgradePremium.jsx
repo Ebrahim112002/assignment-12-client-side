@@ -33,7 +33,7 @@ const CheckoutForm = ({ name, phone, email, setError, setSuccess, setLoading, lo
 
     try {
       console.log('CheckoutForm: Sending request to create-payment-intent with token:', token.substring(0, 10) + '...');
-      const response = await fetch('http://localhost:3000/create-payment-intent', {
+      const response = await fetch('https://matrimony-server-side-sigma.vercel.app/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ const CheckoutForm = ({ name, phone, email, setError, setSuccess, setLoading, lo
         setError(error.message || 'Payment failed');
       } else if (paymentIntent.status === 'succeeded') {
         console.log('CheckoutForm: Payment succeeded, sending to handle-payment-success');
-        const successResponse = await fetch('http://localhost:3000/handle-payment-success', {
+        const successResponse = await fetch('https://matrimony-server-side-sigma.vercel.app/handle-payment-success', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

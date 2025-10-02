@@ -61,7 +61,7 @@ const EditBiodata = () => {
         setIsLoading(true);
         const auth = getAuth();
         const token = await auth.currentUser.getIdToken();
-        const res = await axios.get(`http://localhost:3000/biodatas?email=${user.email}`, {
+        const res = await axios.get(`https://matrimony-server-side-sigma.vercel.app/biodatas?email=${user.email}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -193,7 +193,7 @@ const EditBiodata = () => {
       const token = await auth.currentUser.getIdToken();
       console.log('Updating biodata _id:', biodata._id);
       const res = await axios.patch(
-        `http://localhost:3000/biodatas/${biodata._id}`,
+        `https://matrimony-server-side-sigma.vercel.app/biodatas/${biodata._id}`,
         formDataToSend,
         {
           headers: {

@@ -19,7 +19,7 @@ const ManageBiodatas = () => {
   const fetchBiodatas = async () => {
     if (!token) return;
     try {
-      const response = await axios.get('http://localhost:3000/biodatas', {
+      const response = await axios.get('https://matrimony-server-side-sigma.vercel.app/biodatas', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setBiodatas(response.data);
@@ -84,7 +84,7 @@ const ManageBiodatas = () => {
   useEffect(() => {
     const email = getUserEmailFromToken();
     if (email && token) {
-      axios.get(`http://localhost:3000/users/${email}`, {
+      axios.get(`https://matrimony-server-side-sigma.vercel.app/users/${email}`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then((response) => {
         setIsAdmin(response.data.role === 'admin');
@@ -96,7 +96,7 @@ const ManageBiodatas = () => {
 
   const createUserIfNotExists = async (userEmail, name) => {
     try {
-      await axios.post('http://localhost:3000/users', {
+      await axios.post('https://matrimony-server-side-sigma.vercel.app/users', {
         name,
         photoURL: '',
         role: 'user',
@@ -133,7 +133,7 @@ const ManageBiodatas = () => {
     }
     try {
       await axios.patch(
-        `http://localhost:3000/users/${userEmail.toLowerCase()}/premium`,
+        `https://matrimony-server-side-sigma.vercel.app/users/${userEmail.toLowerCase()}/premium`,
         { isPremium: !biodata.isPremium },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -150,7 +150,7 @@ const ManageBiodatas = () => {
         // Retry toggle
         try {
           await axios.patch(
-            `http://localhost:3000/users/${userEmail.toLowerCase()}/premium`,
+            `https://matrimony-server-side-sigma.vercel.app/users/${userEmail.toLowerCase()}/premium`,
             { isPremium: !biodata.isPremium },
             { headers: { Authorization: `Bearer ${token}` } }
           );
@@ -200,7 +200,7 @@ const ManageBiodatas = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`http://localhost:3000/biodatas/${id}`, {
+        await axios.delete(`https://matrimony-server-side-sigma.vercel.app/biodatas/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         Swal.fire('Deleted!', 'Biodata has been deleted.', 'success');
@@ -234,7 +234,7 @@ const ManageBiodatas = () => {
     try {
       // Exclude _id from update payload
       const { _id, ...updatePayload } = editData;
-      await axios.patch(`http://localhost:3000/biodatas/${editData._id}`, updatePayload, {
+      await axios.patch(`https://matrimony-server-side-sigma.vercel.app/biodatas/${editData._id}`, updatePayload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Swal.fire('Updated!', 'Biodata has been updated.', 'success');

@@ -37,12 +37,12 @@ export const router = createBrowserRouter([
     {
       index:true,
       path:'/',
-      loader: () => fetch('http://localhost:3000/biodatas'),
+      loader: () => fetch('https://matrimony-server-side-sigma.vercel.app/biodatas'),
       Component:Home,
     },
     {
       path:'/biodata/:id',
-      loader: ({ params }) => fetch(`http://localhost:3000/biodatas/${params.id}`),
+      loader: ({ params }) => fetch(`https://matrimony-server-side-sigma.vercel.app/biodatas/${params.id}`),
       Component:BiodatasDtails,
     },
     {
@@ -55,7 +55,7 @@ export const router = createBrowserRouter([
     },
     {
       path:'/all-biodatas',
-      loader: () => fetch('http://localhost:3000/biodatas'),
+      loader: () => fetch('https://matrimony-server-side-sigma.vercel.app/biodatas'),
       Component:AllBiodatas,
     },
     {

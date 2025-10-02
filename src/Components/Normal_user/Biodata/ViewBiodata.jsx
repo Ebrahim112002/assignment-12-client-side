@@ -16,7 +16,7 @@ const ViewBiodata = () => {
       if (!user?.email) {
         throw new Error('User not authenticated');
       }
-      const response = await axios.get(`http://localhost:3000/biodatas?email=${user.email}`, {
+      const response = await axios.get(`https://matrimony-server-side-sigma.vercel.app/biodatas?email=${user.email}`, {
         headers: { Authorization: `Bearer ${user.token}` },
       });
       return response.data.length > 0 ? response.data[0] : null;

@@ -26,13 +26,13 @@ const User = () => {
     const fetchUsers = async () => {
       try {
         // Fetch all users
-        const usersResponse = await axios.get('http://localhost:3000/users', {
+        const usersResponse = await axios.get('https://matrimony-server-side-sigma.vercel.app/users', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         setUsers(usersResponse.data);
 
         // Check if current user is admin
-        const userResponse = await axios.get(`http://localhost:3000/users/${user.email}`, {
+        const userResponse = await axios.get(`https://matrimony-server-side-sigma.vercel.app/users/${user.email}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         });
         setIsAdmin(userResponse.data.role === 'admin');
@@ -59,7 +59,7 @@ const User = () => {
 
   try {
     const response = await axios.patch(
-      `http://localhost:3000/users/${userEmail}/role`,
+      `https://matrimony-server-side-sigma.vercel.app/users/${userEmail}/role`,
       { role: newRole },
       {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },

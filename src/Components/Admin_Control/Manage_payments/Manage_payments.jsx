@@ -19,7 +19,7 @@ const Manage_payments = () => {
 
       try {
         // Fetch user details to check if they are an admin
-        const userResponse = await axios.get(`http://localhost:3000/users/${user.email}`, {
+        const userResponse = await axios.get(`https://matrimony-server-side-sigma.vercel.app/users/${user.email}`, {
           headers: {
             Authorization: `Bearer ${user.accessToken}`,
           },
@@ -34,7 +34,7 @@ const Manage_payments = () => {
         setIsAdmin(true);
 
         // Fetch premium requests (includes payment details)
-        const paymentsResponse = await axios.get('http://localhost:3000/premium-requests', {
+        const paymentsResponse = await axios.get('https://matrimony-server-side-sigma.vercel.app/premium-requests', {
           headers: {
             Authorization: `Bearer ${user.accessToken}`,
           },

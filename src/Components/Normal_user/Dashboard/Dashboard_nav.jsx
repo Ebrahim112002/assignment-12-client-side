@@ -19,7 +19,7 @@ const Dashboard_nav = () => {
     const fetchBiodataStatus = async () => {
       if (!user?.email) return;
       try {
-        const response = await axios.get('http://localhost:3000/biodatas', {
+        const response = await axios.get('https://matrimony-server-side-sigma.vercel.app/biodatas', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           params: { email: user.email },
         });

@@ -49,7 +49,7 @@ const SuccessCounter = () => {
   // Fetch success stories
   useEffect(() => {
     setIsLoading(true);
-    fetch("http://localhost:3000/success-counter")
+    fetch("https://matrimony-server-side-sigma.vercel.app/success-counter")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch success stories");
         return res.json();

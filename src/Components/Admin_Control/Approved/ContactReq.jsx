@@ -19,7 +19,7 @@ const ContactReq = () => {
         setError(null);
         console.log('User token:', user?.accessToken); // Debug token
         // Fetch user data to check premium and admin status
-        const userResponse = await axios.get(`http://localhost:3000/users/${user.email}`, {
+        const userResponse = await axios.get(`https://matrimony-server-side-sigma.vercel.app/users/${user.email}`, {
           headers: { Authorization: `Bearer ${user.accessToken}` },
         });
         console.log('User response:', userResponse.data); // Debug response
@@ -34,12 +34,12 @@ const ContactReq = () => {
         // Fetch contact requests based on user role
         let response;
         if (fetchedIsAdmin) {
-          response = await axios.get('http://localhost:3000/contact-requests?status=pending', {
+          response = await axios.get('https://matrimony-server-side-sigma.vercel.app/contact-requests?status=pending', {
             headers: { Authorization: `Bearer ${user.accessToken}` },
           });
           setContactRequests(response.data);
         } else if (fetchedIsPremium) {
-          response = await axios.get('http://localhost:3000/my-contact-requests', {
+          response = await axios.get('https://matrimony-server-side-sigma.vercel.app/my-contact-requests', {
             headers: { Authorization: `Bearer ${user.accessToken}` },
           });
           setContactRequests(response.data);
@@ -75,7 +75,7 @@ const ContactReq = () => {
     }
     try {
       await axios.patch(
-        `http://localhost:3000/contact-requests/${requestId}/approve`,
+        `https://matrimony-server-side-sigma.vercel.app/contact-requests/${requestId}/approve`,
         {},
         { headers: { Authorization: `Bearer ${user.accessToken}` } }
       );
@@ -94,7 +94,7 @@ const ContactReq = () => {
     }
     try {
       await axios.patch(
-        `http://localhost:3000/contact-requests/${requestId}/reject`,
+        `https://matrimony-server-side-sigma.vercel.app/contact-requests/${requestId}/reject`,
         {},
         { headers: { Authorization: `Bearer ${user.accessToken}` } }
       );

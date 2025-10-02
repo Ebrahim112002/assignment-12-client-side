@@ -58,7 +58,7 @@ const UserReqSend = ({ biodataId, biodata }) => {
 
         // Fetch my contact requests to check status for this biodata
         console.log('Fetching contact requests...');
-        const reqRes = await fetch('http://localhost:3000/my-contact-requests', {
+        const reqRes = await fetch('https://matrimony-server-side-sigma.vercel.app/my-contact-requests', {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ const UserReqSend = ({ biodataId, biodata }) => {
     // Send the request
     console.log('Sending new request...');
     try {
-      const res = await fetch('http://localhost:3000/contact-requests', {
+      const res = await fetch('https://matrimony-server-side-sigma.vercel.app/contact-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

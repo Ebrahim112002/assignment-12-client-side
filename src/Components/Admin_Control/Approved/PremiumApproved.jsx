@@ -36,7 +36,7 @@ const PremiumApproved = () => {
     const fetchPremiumRequests = async () => {
       try {
         console.log('Fetching premium requests with token:', token.substring(0, 10) + '...');
-        const response = await fetch('http://localhost:3000/premium-requests?status=pending', {
+        const response = await fetch('https://matrimony-server-side-sigma.vercel.app/premium-requests?status=pending', {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -63,7 +63,7 @@ const PremiumApproved = () => {
   const handleApprove = async (email) => {
     try {
       console.log('Approving request for email:', email);
-      const response = await fetch(`http://localhost:3000/premium-requests/email/${email}/approve`, {
+      const response = await fetch(`https://matrimony-server-side-sigma.vercel.app/premium-requests/email/${email}/approve`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -98,7 +98,7 @@ const PremiumApproved = () => {
   const handleReject = async (email) => {
     try {
       console.log('Rejecting request for email:', email);
-      const response = await fetch(`http://localhost:3000/premium-requests/email/${email}/reject`, {
+      const response = await fetch(`https://matrimony-server-side-sigma.vercel.app/premium-requests/email/${email}/reject`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

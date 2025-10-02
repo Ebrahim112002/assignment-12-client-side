@@ -24,7 +24,7 @@ const AuthProvider = ({ children }) => {
 
       // Send to backend, backend should handle default role as 'user'
       await axios.post(
-        'http://localhost:3000/users',
+        'https://matrimony-server-side-sigma.vercel.app/users',
         {
           name,
           email,
@@ -52,7 +52,7 @@ const AuthProvider = ({ children }) => {
       // Try to create user in backend if not exists
       try {
         await axios.post(
-          'http://localhost:3000/users',
+          'https://matrimony-server-side-sigma.vercel.app/users',
           {
             name: user.displayName || 'Unnamed User',
             email: user.email,
@@ -85,7 +85,7 @@ const AuthProvider = ({ children }) => {
       // Try to create user in backend if not exists
       try {
         await axios.post(
-          'http://localhost:3000/users',
+          'https://matrimony-server-side-sigma.vercel.app/users',
           {
             name: user.displayName || 'Unnamed User',
             email: user.email,
@@ -133,7 +133,7 @@ const AuthProvider = ({ children }) => {
           setToken(idToken);
 
           // Fetch user info from backend
-          const { data } = await axios.get(`http://localhost:3000/users/${currentUser.email}`, {
+          const { data } = await axios.get(`https://matrimony-server-side-sigma.vercel.app/users/${currentUser.email}`, {
             headers: { Authorization: `Bearer ${idToken}` },
             timeout: 5000,
           });

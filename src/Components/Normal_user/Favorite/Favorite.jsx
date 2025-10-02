@@ -27,7 +27,7 @@ const Favorite = () => {
 
           try {
             const res = await axios.get(
-              `http://localhost:3000/favourites?email=${firebaseUser.email}`,
+              `https://matrimony-server-side-sigma.vercel.app/favourites?email=${firebaseUser.email}`,
               { timeout: 5000 }
             );
             setFavourites(res.data);
@@ -72,7 +72,7 @@ const handleRemoveFavorite = async (favId) => {
 
   try {
     const token = await auth.currentUser.getIdToken(); // ✅ FIXED
-    await axios.delete(`http://localhost:3000/favourites/${favId}`, {
+    await axios.delete(`https://matrimony-server-side-sigma.vercel.app/favourites/${favId}`, {
       headers: { Authorization: `Bearer ${token}` },
       timeout: 5000,
     });
