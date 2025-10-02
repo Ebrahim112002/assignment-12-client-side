@@ -67,10 +67,73 @@ const ManageBiodatas = () => {
       b.permanentDivision.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const getUserEmailFromToken = () => {
+    if (!token) return null;
+    try {
+      const payloadStr = token.split('.')[1];
+      const payload = JSON.parse(atob(payloadStr));
+      return payload.email;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const email = getUserEmailFromToken();
+    if (email && token) {
+      axios.get(`http://localhost:3000/users/${email}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((response) => {
+        setIsAdmin(response.data.role === 'admin');
+      }).catch((error) => {
+        console.error('Error fetching current user:', error);
+      });
+    }
+  }, [token]);
+
+  const createUserIfNotExists = async (userEmail, name) => {
+    try {
+      await axios.post('http://localhost:3000/users', {
+        name,
+        photoURL: '',
+        role: 'user',
+        isPremium: false,
+        targetEmail: userEmail
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('User created successfully');
+    } catch (createError) {
+      if (createError.response?.status !== 409) { // 409 means already exists
+        console.error('Error creating user:', createError);
+      }
+    }
+  };
+
   const handleTogglePremium = async (biodata) => {
+    if (!isAdmin) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'Admin privileges required.',
+      });
+      return;
+    }
+    const userEmail = biodata.email || biodata.contactEmail;
+    if (!userEmail) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'User email is missing. Cannot toggle premium.',
+      });
+      return;
+    }
     try {
       await axios.patch(
-        `http://localhost:3000/users/${biodata.email}/premium`,
+        `http://localhost:3000/users/${userEmail.toLowerCase()}/premium`,
         { isPremium: !biodata.isPremium },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -81,16 +144,50 @@ const ManageBiodatas = () => {
       });
       fetchBiodatas(); // Refetch to update list
     } catch (error) {
-      console.error('Error toggling premium:', error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to toggle premium status.',
-      });
+      if (error.response?.status === 404) {
+        // User not found, create it
+        await createUserIfNotExists(userEmail, biodata.name);
+        // Retry toggle
+        try {
+          await axios.patch(
+            `http://localhost:3000/users/${userEmail.toLowerCase()}/premium`,
+            { isPremium: !biodata.isPremium },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: `User created and premium status toggled to ${!biodata.isPremium ? 'Premium' : 'Normal'}.`,
+          });
+          fetchBiodatas();
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to toggle premium after creating user.',
+          });
+        }
+      } else {
+        console.error('Error toggling premium:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to toggle premium status.',
+        });
+      }
     }
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Access Denied',
+        text: 'Admin privileges required to delete.',
+      });
+      return;
+    }
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: 'This biodata will be deleted permanently!',
@@ -124,26 +221,24 @@ const ManageBiodatas = () => {
     setShowModal(true);
   };
 
-  const openEditModal = (biodata) => {
-    setEditData({ ...biodata });
-    setShowEditModal(true);
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedBiodata(null);
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(prev => ({ ...prev, [name]: value }));
-  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!editData._id) return;
     setUpdating(true);
     try {
-      await axios.patch(`http://localhost:3000/biodatas/${editData._id}`, editData, {
+      // Exclude _id from update payload
+      const { _id, ...updatePayload } = editData;
+      await axios.patch(`http://localhost:3000/biodatas/${editData._id}`, updatePayload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Swal.fire('Updated!', 'Biodata has been updated.', 'success');
-      setShowEditModal(false);
+      closeEditModal();
       fetchBiodatas();
     } catch (error) {
       console.error('Error updating biodata:', error);
@@ -157,10 +252,26 @@ const ManageBiodatas = () => {
     }
   };
 
+  const handleModalBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      if (showModal) closeModal();
+      if (showEditModal) closeEditModal();
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#D81B60]"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-red-600">Access Denied</h1>
+        <p className="mt-4">You do not have admin privileges to access this page.</p>
       </div>
     );
   }
@@ -232,36 +343,30 @@ const ManageBiodatas = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => openModal(biodata)}
-                    className="text-blue-600 hover:text-blue-900 p-1"
+                    className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors flex items-center justify-center"
                     title="View Details"
                   >
-                    <FaEye />
+                    <FaEye className="text-sm" />
                   </button>
-                  <button
-                    onClick={() => openEditModal(biodata)}
-                    className="text-indigo-600 hover:text-indigo-900 p-1"
-                    title="Edit"
-                  >
-                    <FaEdit />
-                  </button>
+                
                   <button
                     onClick={() => handleTogglePremium(biodata)}
-                    className={`p-1 rounded ${
+                    className={`p-2 rounded flex items-center justify-center transition-colors ${
                       biodata.isPremium
-                        ? 'text-red-600 hover:text-red-900'
-                        : 'text-green-600 hover:text-green-900'
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-green-500 text-white hover:bg-green-600'
                     }`}
                     title={biodata.isPremium ? 'Downgrade to Normal' : 'Upgrade to Premium'}
                   >
-                    <FaCrown />
+                    <FaCrown className="text-sm" />
                   </button>
                 </div>
                 <button
                   onClick={() => handleDelete(biodata._id)}
-                  className="text-red-600 hover:text-red-900 p-1"
+                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-colors flex items-center justify-center"
                   title="Delete"
                 >
-                  <FaTrash />
+                  <FaTrash className="text-sm" />
                 </button>
               </div>
             </div>
@@ -271,7 +376,10 @@ const ManageBiodatas = () => {
 
       {/* View Details Modal */}
       {showModal && selectedBiodata && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleModalBackdropClick}
+        >
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-2xl font-bold text-[#D81B60] mb-4">{selectedBiodata.name}</h2>
@@ -303,7 +411,7 @@ const ManageBiodatas = () => {
                 className="w-full max-w-xs mx-auto mt-4 rounded-lg"
               />
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="mt-4 bg-[#D81B60] text-white px-4 py-2 rounded hover:bg-[#ad1457] w-full"
               >
                 Close
@@ -313,182 +421,7 @@ const ManageBiodatas = () => {
         </div>
       )}
 
-      {/* Edit Modal */}
-      {showEditModal && editData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-[#D81B60] mb-4">Edit Biodata</h2>
-              <form onSubmit={handleUpdate} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={editData.name || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                    required
-                  />
-                  <input
-                    type="number"
-                    name="age"
-                    placeholder="Age"
-                    value={editData.age || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                    required
-                  />
-                  <input
-                    type="text"
-                    name="occupation"
-                    placeholder="Occupation"
-                    value={editData.occupation || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="permanentDivision"
-                    placeholder="Permanent Division"
-                    value={editData.permanentDivision || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="presentDivision"
-                    placeholder="Present Division"
-                    value={editData.presentDivision || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="maritalStatus"
-                    placeholder="Marital Status"
-                    value={editData.maritalStatus || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="date"
-                    name="dob"
-                    placeholder="Date of Birth"
-                    value={editData.dob ? editData.dob.split('T')[0] : ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="height"
-                    placeholder="Height"
-                    value={editData.height || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="weight"
-                    placeholder="Weight"
-                    value={editData.weight || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="race"
-                    placeholder="Race"
-                    value={editData.race || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="fatherName"
-                    placeholder="Father's Name"
-                    value={editData.fatherName || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="motherName"
-                    placeholder="Mother's Name"
-                    value={editData.motherName || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="partnerAge"
-                    placeholder="Expected Partner Age"
-                    value={editData.partnerAge || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="partnerHeight"
-                    placeholder="Expected Partner Height"
-                    value={editData.partnerHeight || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="text"
-                    name="partnerWeight"
-                    placeholder="Expected Partner Weight"
-                    value={editData.partnerWeight || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="email"
-                    name="contactEmail"
-                    placeholder="Contact Email"
-                    value={editData.contactEmail || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                  <input
-                    type="tel"
-                    name="mobileNumber"
-                    placeholder="Mobile Number"
-                    value={editData.mobileNumber || ''}
-                    onChange={handleEditChange}
-                    className="border border-gray-300 rounded px-3 py-2 w-full"
-                  />
-                </div>
-                <textarea
-                  name="biodataType"
-                  placeholder="Biodata Type"
-                  value={editData.biodataType || ''}
-                  onChange={handleEditChange}
-                  className="border border-gray-300 rounded px-3 py-2 w-full"
-                  rows={2}
-                />
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="bg-[#D81B60] text-white px-4 py-2 rounded hover:bg-[#ad1457] disabled:opacity-50"
-                  >
-                    {updating ? 'Updating...' : 'Update'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };
