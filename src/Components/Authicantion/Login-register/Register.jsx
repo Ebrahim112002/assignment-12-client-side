@@ -1,47 +1,18 @@
 import React, { useState, useContext } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Authcontext } from '../Auth/Authcontext';
-import { auth } from '../../Firebase/firebase.init';
-
 
 const Register = () => {
-  const { createUser, currentUser } = useContext(Authcontext); // Access currentUser from context
+  const { createUser } = useContext(Authcontext);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [photo, setPhoto] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  const mutation = useMutation({
-    mutationFn: async ({ name, email, uid }) => {
-      // Use currentUser from context or fallback to Firebase auth
-      const user = currentUser || auth.currentUser;
-      if (!user) {
-        throw new Error('User is not authenticated. Please try again.');
-      }
-      const token = await user.getIdToken(); // Get the Firebase ID token
-      console.log('Sending to backend:', { name, email, role: 'user', uid });
-      return await axios.post(
-        'http://localhost:3000/users',
-        { name, email, role: 'user', uid },
-        {
-          timeout: 5000,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-    },
-    onError: (error) => {
-      console.error('Mutation error:', error.response?.data || error.message);
-      setError(error.response?.data?.error?.message || error.message || 'Failed to save user data');
-    },
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,20 +55,7 @@ const Register = () => {
         }
       }
 
-      const user = await createUser(email, password, name, photoURL);
-      console.log('Firebase user:', user); // Debug the user object
-
-      // Wait for Firebase auth state to update (optional, to ensure currentUser is set)
-      await new Promise((resolve) => {
-        const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
-          if (firebaseUser) {
-            unsubscribe();
-            resolve();
-          }
-        });
-      });
-
-      await mutation.mutateAsync({ name, email, uid: user.uid });
+      await createUser(email, password, name, photoURL);
 
       Swal.fire({
         title: 'Registration Successful!',
@@ -192,12 +150,11 @@ const Register = () => {
 
           <motion.button
             type="submit"
-            disabled={mutation.isPending}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full py-3 rounded-lg bg-gradient-to-r from-[#D81B60] to-[#4A2C40] text-white font-lato font-semibold text-lg transition duration-300 disabled:bg-[#E0E0E0] disabled:text-[#757575]"
+            className="w-full py-3 rounded-lg bg-gradient-to-r from-[#D81B60] to-[#4A2C40] text-white font-lato font-semibold text-lg transition duration-300"
           >
-            {mutation.isPending ? 'Registering...' : 'Register'}
+            Register
           </motion.button>
         </form>
 

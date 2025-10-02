@@ -3,12 +3,13 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   onAuthStateChanged, 
-  signOut 
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import axios from 'axios';
 import { auth } from '../../Firebase/firebase.init';
 import { Authcontext } from './Authcontext';
-
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -70,6 +71,40 @@ const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Sign in error:', error.message);
       throw new Error(error.code || 'Failed to sign in');
+    }
+  };
+
+  // Google sign in
+  const googleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
+      // Try to create user in backend if not exists
+      try {
+        await axios.post(
+          'http://localhost:3000/users',
+          {
+            name: user.displayName || 'Unnamed User',
+            email: user.email,
+            photoURL: user.photoURL || '',
+            uid: user.uid,
+          },
+          { headers: { Authorization: `Bearer ${idToken}` }, timeout: 5000 }
+        );
+      } catch (err) {
+        // If user already exists, ignore
+        if (err.response?.status !== 409) throw err;
+      }
+
+      localStorage.setItem('token', idToken);
+      setToken(idToken);
+      return user;
+    } catch (error) {
+      console.error('Google sign in error:', error.message);
+      throw new Error(error.code || 'Failed to sign in with Google');
     }
   };
 
@@ -143,6 +178,7 @@ const AuthProvider = ({ children }) => {
     loading,
     createUser,
     signIn,
+    googleSignIn,
     logout,
   };
 

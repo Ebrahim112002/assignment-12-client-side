@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Authcontext } from '../../Authicantion/Auth/Authcontext';
 
 const ContactReq = () => {
@@ -10,35 +10,54 @@ const ContactReq = () => {
   const [contactRequests, setContactRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserAndRequests = async () => {
       try {
         setLoading(true);
-        console.log('User token:', user?.token); // Debug token
+        setError(null);
+        console.log('User token:', user?.accessToken); // Debug token
         // Fetch user data to check premium and admin status
         const userResponse = await axios.get(`http://localhost:3000/users/${user.email}`, {
-          headers: { Authorization: `Bearer ${user.token}` },
+          headers: { Authorization: `Bearer ${user.accessToken}` },
         });
         console.log('User response:', userResponse.data); // Debug response
-        setIsPremium(userResponse.data.isPremium || false);
-        setIsAdmin(userResponse.data.role === 'admin');
+        const fetchedIsPremium = userResponse.data.isPremium || false;
+        const fetchedIsAdmin = userResponse.data.role === 'admin';
+        setIsPremium(fetchedIsPremium);
+        setIsAdmin(fetchedIsAdmin);
+
+        // Clear previous error if any
+        setError(null);
 
         // Fetch contact requests based on user role
-        if (isAdmin) {
-          const response = await axios.get('http://localhost:3000/contact-requests', {
-            headers: { Authorization: `Bearer ${user.token}` },
+        let response;
+        if (fetchedIsAdmin) {
+          response = await axios.get('http://localhost:3000/contact-requests?status=pending', {
+            headers: { Authorization: `Bearer ${user.accessToken}` },
           });
           setContactRequests(response.data);
-        } else if (isPremium) {
-          const response = await axios.get('http://localhost:3000/my-contact-requests', {
-            headers: { Authorization: `Bearer ${user.token}` },
+        } else if (fetchedIsPremium) {
+          response = await axios.get('http://localhost:3000/my-contact-requests', {
+            headers: { Authorization: `Bearer ${user.accessToken}` },
           });
           setContactRequests(response.data);
+        } else {
+          // Non-premium non-admin: no fetch, will show upgrade message
+          setContactRequests([]);
         }
       } catch (err) {
         console.error('Fetch error:', err.response?.data); // Debug error
-        setError(err.response?.data?.error || 'Failed to load data');
+        if (err.response?.status === 403) {
+          setError('Access denied. Admin privileges required for this action.');
+          // For non-admin trying admin endpoint, but since we check before fetch, shouldn't happen
+          if (!isAdmin) {
+            navigate('/unauthorized');
+          }
+        } else {
+          setError(err.response?.data?.error || 'Failed to load data');
+        }
       } finally {
         setLoading(false);
       }
@@ -47,41 +66,54 @@ const ContactReq = () => {
     if (user && !authLoading) {
       fetchUserAndRequests();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate, isAdmin]);
 
   const handleApprove = async (requestId) => {
+    if (!isAdmin) {
+      setError('Unauthorized: Admin access required');
+      return;
+    }
     try {
       await axios.patch(
         `http://localhost:3000/contact-requests/${requestId}/approve`,
         {},
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        { headers: { Authorization: `Bearer ${user.accessToken}` } }
       );
-      setContactRequests((prev) =>
-        prev.map((req) =>
-          req._id === requestId ? { ...req, status: 'approved', approvedAt: new Date() } : req
-        )
-      );
+      // Remove the approved request from the list since only pending are shown
+      setContactRequests((prev) => prev.filter((req) => req._id !== requestId));
+      setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to approve request');
     }
   };
 
   const handleReject = async (requestId) => {
+    if (!isAdmin) {
+      setError('Unauthorized: Admin access required');
+      return;
+    }
     try {
       await axios.patch(
         `http://localhost:3000/contact-requests/${requestId}/reject`,
         {},
-        { headers: { Authorization: `Bearer ${user.token}` } }
+        { headers: { Authorization: `Bearer ${user.accessToken}` } }
       );
-      setContactRequests((prev) =>
-        prev.map((req) =>
-          req._id === requestId ? { ...req, status: 'rejected', rejectedAt: new Date() } : req
-        )
-      );
+      // Remove the rejected request from the list since only pending are shown
+      setContactRequests((prev) => prev.filter((req) => req._id !== requestId));
+      setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to reject request');
     }
   };
+
+  // Additional check after loading: redirect if unauthorized for admin view
+  useEffect(() => {
+    if (!loading && !authLoading && user) {
+      if (!isAdmin && !isPremium) {
+        navigate('/premium-members'); // or wherever appropriate
+      }
+    }
+  }, [loading, authLoading, isAdmin, isPremium, user, navigate]);
 
   if (authLoading || loading) {
     return (
@@ -102,7 +134,16 @@ const ContactReq = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FFF8E1] to-[#F8BBD0] flex items-center justify-center">
-        <p className="text-red-500 font-lato">{error}</p>
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4 text-center">
+          <h3 className="text-xl font-bold text-red-500 mb-4 font-lato">Error</h3>
+          <p className="text-red-500 font-lato mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#D81B60] text-white py-3 px-6 rounded-xl hover:bg-[#9f1239] transition-colors font-lato"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -130,18 +171,18 @@ const ContactReq = () => {
     <div className="min-h-screen bg-gradient-to-b from-[#FFF8E1] to-[#F8BBD0] py-10">
       <div className="max-w-4xl mx-auto px-4">
         <h2 className="text-3xl font-bold text-[#D81B60] text-center mb-8 font-playfair">
-          {isAdmin ? 'All Contact Requests' : 'My Contact Requests'}
+          {isAdmin ? 'Pending Contact Requests (Admin Panel)' : 'My Contact Requests'}
         </h2>
         {contactRequests.length === 0 ? (
-          <p className="text-[#212121] text-center font-lato">No contact requests found.</p>
+          <p className="text-[#212121] text-center font-lato">No {isAdmin ? 'pending ' : ''}contact requests found.</p>
         ) : (
           <div className="space-y-4">
             {contactRequests.map((request) => (
               <div
                 key={request._id}
-                className="bg-white p-6 rounded-xl shadow-md flex justify-between items-center"
+                className="bg-white p-6 rounded-xl shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
               >
-                <div>
+                <div className="flex-1">
                   <p className="text-[#212121] font-lato">
                     <strong>Biodata ID:</strong> {request.requestedBiodataId}
                   </p>
@@ -151,9 +192,17 @@ const ContactReq = () => {
                         <strong>Requester:</strong> {request.requesterEmail}
                       </p>
                       <p className="text-[#212121] font-lato">
+                        <strong>Requester Premium:</strong> {request.requester?.isPremium ? 'Yes' : 'No'}
+                      </p>
+                      <p className="text-[#212121] font-lato">
                         <strong>Biodata Name:</strong> {request.biodata?.name || 'N/A'}
                       </p>
                     </>
+                  )}
+                  {!isAdmin && request.biodata && (
+                    <p className="text-[#212121] font-lato">
+                      <strong>Profile Name:</strong> {request.biodata.name}
+                    </p>
                   )}
                   {request.status === 'approved' && request.biodata && (
                     <>
@@ -166,7 +215,18 @@ const ContactReq = () => {
                     </>
                   )}
                   <p className="text-[#212121] font-lato">
-                    <strong>Status:</strong> {request.status}
+                    <strong>Status:</strong>{' '}
+                    <span
+                      className={`capitalize px-2 py-1 rounded-full text-xs ${
+                        request.status === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : request.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {request.status}
+                    </span>
                   </p>
                   <p className="text-[#212121] font-lato">
                     <strong>Created At:</strong>{' '}
@@ -174,16 +234,16 @@ const ContactReq = () => {
                   </p>
                 </div>
                 {isAdmin && request.status === 'pending' && (
-                  <div className="space-x-2">
+                  <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-auto">
                     <button
                       onClick={() => handleApprove(request._id)}
-                      className="bg-green-500 text-white py-2 px-4 rounded-xl hover:bg-green-600 transition-colors font-lato"
+                      className="bg-green-500 text-white py-2 px-4 rounded-xl hover:bg-green-600 transition-colors font-lato w-full sm:w-auto"
                     >
                       Approve
                     </button>
                     <button
                       onClick={() => handleReject(request._id)}
-                      className="bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 transition-colors font-lato"
+                      className="bg-red-500 text-white py-2 px-4 rounded-xl hover:bg-red-600 transition-colors font-lato w-full sm:w-auto"
                     >
                       Reject
                     </button>

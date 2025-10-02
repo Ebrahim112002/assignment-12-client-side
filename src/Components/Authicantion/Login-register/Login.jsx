@@ -1,31 +1,21 @@
 import React, { useState, useContext } from 'react';
-import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 import Swal from 'sweetalert2';
 import { Authcontext } from '../Auth/Authcontext';
 
 const Login = () => {
-  const { signIn } = useContext(Authcontext);
+  const { signIn, googleSignIn } = useContext(Authcontext);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  const mutation = useMutation({
-    mutationFn: async (email) => {
-      return await axios.get(`http://localhost:3000/users/${email}`, { timeout: 5000 });
-    },
-    onError: (error) => setError(error.message || 'Failed to fetch user data'),
-  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
       await signIn(email, password);
-      await mutation.mutateAsync(email);
       Swal.fire({
         title: 'Login Successful!',
         text: 'Welcome back to Love Matrimony!',
@@ -40,6 +30,29 @@ const Login = () => {
       Swal.fire({
         title: 'Login Failed',
         text: err.message || 'Invalid email or password. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#D81B60',
+        showConfirmButton: true,
+      });
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await googleSignIn();
+      Swal.fire({
+        title: 'Login Successful!',
+        text: 'Welcome back to Love Matrimony!',
+        icon: 'success',
+        confirmButtonColor: '#D81B60',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      navigate('/');
+    } catch (err) {
+      Swal.fire({
+        title: 'Google Login Failed',
+        text: err.message || 'Failed to sign in with Google. Please try again.',
         icon: 'error',
         confirmButtonColor: '#D81B60',
         showConfirmButton: true,
@@ -103,14 +116,26 @@ const Login = () => {
 
           <motion.button
             type="submit"
-            disabled={mutation.isPending}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="w-full py-3 rounded-lg bg-gradient-to-r from-[#D81B60] to-[#4A2C40] text-[#212121] font-lato font-semibold text-lg transition duration-300 disabled:bg-[#E0E0E0] disabled:text-[#757575]"
+            className="w-full py-3 rounded-lg bg-gradient-to-r from-[#D81B60] to-[#4A2C40] text-[#212121] font-lato font-semibold text-lg transition duration-300"
           >
-            {mutation.isPending ? 'Logging in...' : 'Login'}
+            Login
           </motion.button>
         </form>
+
+        <div className="mt-6">
+          <p className="text-center text-[#757575] font-lato mb-4">Or sign in with</p>
+          <motion.button
+            type="button"
+            onClick={handleGoogleSignIn}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="w-full py-3 border border-[#E0E0E0] rounded-lg text-[#212121] font-lato font-semibold text-lg transition duration-300 bg-white hover:bg-[#F5F5F5]"
+          >
+            Continue with Google
+          </motion.button>
+        </div>
 
         <p className="text-center mt-6 text-[#212121] font-lato">
           Don't have an account?{' '}

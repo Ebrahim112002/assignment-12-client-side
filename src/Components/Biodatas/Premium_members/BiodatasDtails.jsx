@@ -37,6 +37,7 @@ const BiodatasDetails = () => {
   const [favorites, setFavorites] = useState([]);
   const [requestStatus, setRequestStatus] = useState('none'); // 'none', 'pending', 'approved', 'rejected'
   const [myRequests, setMyRequests] = useState([]);
+  const [isPremium, setIsPremium] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -50,7 +51,7 @@ const BiodatasDetails = () => {
     }
   }, [biodata]);
 
-  // Fetch user favorites and contact requests on mount
+  // Fetch user favorites, contact requests, and premium status on mount
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
@@ -58,6 +59,18 @@ const BiodatasDetails = () => {
       const token = user.accessToken || localStorage.getItem('token');
 
       try {
+        // Fetch user profile for premium status
+        const userRes = await fetch(`http://localhost:3000/users/${user.email}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          setIsPremium(userData.isPremium || false);
+        }
+
         // Fetch favorites
         const favRes = await fetch("http://localhost:3000/favourites?email=" + user.email, {
           headers: {
@@ -247,7 +260,7 @@ const BiodatasDetails = () => {
     }
 
     // If not premium, prompt upgrade
-    if (!user.isPremium) {
+    if (!isPremium) {
       Swal.fire({
         toast: true,
         icon: "info",
@@ -391,7 +404,7 @@ const BiodatasDetails = () => {
 
   // Determine contact section
   const renderContactSection = () => {
-    if (!user.isPremium) {
+    if (!isPremium) {
       return (
         <motion.button
           whileHover={{ scale: 1.05 }}

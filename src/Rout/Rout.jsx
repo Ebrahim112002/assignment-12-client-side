@@ -19,7 +19,6 @@ import Dashboard_nav from "../Components/Normal_user/Dashboard/Dashboard_nav";
 import EditBiodata from "../Components/Normal_user/Biodata/EditBiodata";
 import ViewBiodata from "../Components/Normal_user/Biodata/ViewBiodata";
 import Create_Biodata from "../Components/Normal_user/Biodata/Create_Biodata";
-import Checkout from "../Components/Normal_user/Checkout/Checkout";
 import Favorite from "../Components/Normal_user/Favorite/Favorite";
 import User from "../Components/Admin_Control/User";
 import UpgradePremium from "../Components/Normal_user/upgrade/UpgradePremium";
@@ -27,6 +26,7 @@ import ManageBiodatas from "../Components/Admin_Control/Manage Biodatas/ManageBi
 import PremiumApproved from "../Components/Admin_Control/Approved/PremiumApproved";
 import ContactReq from "../Components/Admin_Control/Approved/ContactReq";
 import ManagePayments from "../Components/Admin_Control/Manage_payments/Manage_payments";
+import UserReqSend from "../Components/Normal_user/Checkout/UserReqSend";
 
 
 export const router = createBrowserRouter([
@@ -90,7 +90,7 @@ export const router = createBrowserRouter([
       },
       {
         path:'/dashboard/contact-requests',
-        Component:Checkout
+        Component:UserReqSend
       },
       {
         path:'/dashboard/favorites',
