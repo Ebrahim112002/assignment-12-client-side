@@ -27,12 +27,14 @@ import PremiumApproved from "../Components/Admin_Control/Approved/PremiumApprove
 import ContactReq from "../Components/Admin_Control/Approved/ContactReq";
 import ManagePayments from "../Components/Admin_Control/Manage_payments/Manage_payments";
 import UserReqSend from "../Components/Normal_user/Checkout/UserReqSend";
+import ErrorPage from "../Components/Error/ErrorPage";
 
 
 export const router = createBrowserRouter([
   {
     path: "/",
    Component:Root,
+   errorElement:<ErrorPage></ErrorPage>,
    children:[
     {
       index:true,
@@ -71,6 +73,7 @@ export const router = createBrowserRouter([
   {
     path: '/dashboard',
      Component: Dashboard_nav,
+     errorElement:<ErrorPage></ErrorPage>,
     children: [
       {
         index: true,
